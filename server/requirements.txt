@@ -1,0 +1,24 @@
+# Ro-DeepVoice Server Dependencies
+# ==================================
+
+# Web Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# HTTP Client (pentru proxy/forwarding requests)
+httpx>=0.26.0
+
+# SSH Tunnel
+sshtunnel>=0.4.0
+paramiko>=3.4.0
+
+# WebSocket support
+websockets>=12.0
+
+# Configuration
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+
+# Async file operations
+aiofiles>=23.2.0

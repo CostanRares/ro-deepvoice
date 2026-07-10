@@ -1,0 +1,84 @@
+# ============================================================================
+# Ro-DeepVoice — rulare complet locală, cu imagini descărcate de pe GitHub.
+#
+#   docker compose up -d          → pornește sinteza (VITS + StyleTTS2) + interfața
+#   docker compose --profile asistent up -d  → include și asistentul LLM (mai greu)
+#
+# Interfața:       http://localhost:5000/ui
+# Extensia Chrome: comunică automat cu gateway-ul pe http://127.0.0.1:5000
+# ============================================================================
+
+x-vits-image: &vits-image ${RODV_REGISTRY:-ghcr.io/costanrares}/ro-deepvoice-vits:latest
+
+services:
+  gateway:
+    image: ${RODV_REGISTRY:-ghcr.io/costanrares}/ro-deepvoice-gateway:latest
+    container_name: rodv-gateway
+    ports:
+      - "5000:5000"
+    environment:
+      - LOCAL_MODE=1
+      - URL_VITS1_BIBLIE=http://vits1-biblie:8011
+      - URL_VITS2_BIBLIE=http://vits2-biblie:8012
+      - URL_VITS2_RSS=http://vits2-rss:8013
+      - URL_VITS1_RSS=http://vits1-rss:8014
+      - URL_STYLETTS2=http://styletts2:8015
+      - URL_LLM=http://llm:8016
+    depends_on:
+      - vits1-rss
+      - vits2-rss
+    restart: unless-stopped
+
+  vits1-rss:
+    image: *vits-image
+    container_name: rodv-vits1-rss
+    environment:
+      - MODEL_ID=vits1_mass     # numele intern al modelului vits1_rss
+      - PORT=8014
+    restart: unless-stopped
+
+  vits2-rss:
+    image: *vits-image
+    container_name: rodv-vits2-rss
+    environment:
+      - MODEL_ID=vits2_rss
+      - PORT=8013
+    restart: unless-stopped
+
+  vits1-biblie:
+    image: *vits-image
+    container_name: rodv-vits1-biblie
+    environment:
+      - MODEL_ID=vits1_biblie
+      - PORT=8011
+    restart: unless-stopped
+
+  vits2-biblie:
+    image: *vits-image
+    container_name: rodv-vits2-biblie
+    environment:
+      - MODEL_ID=vits2_biblie
+      - PORT=8012
+    restart: unless-stopped
+
+  styletts2:
+    image: ${RODV_REGISTRY:-ghcr.io/costanrares}/ro-deepvoice-styletts2:latest
+    container_name: rodv-styletts2
+    environment:
+      - PORT=8015
+    restart: unless-stopped
+
+  # Asistentul conversațional (LLM) — opțional: mai greu (model 8B; pe CPU e lent).
+  # Modelul GGUF (~4,9 GB) se descarcă automat la prima pornire, într-un volum.
+  llm:
+    image: ${RODV_REGISTRY:-ghcr.io/costanrares}/ro-deepvoice-llm:latest
+    container_name: rodv-llm
+    profiles: ["asistent"]
+    environment:
+      - PORT=8016
+    volumes:
+      - llm-models:/models
+    restart: unless-stopped
+
+volumes:
+  llm-models:

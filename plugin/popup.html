@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ro-DeepVoice TTS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-background"></div>
+    <div class="container glass-panel">
+        <header>
+            <div class="logo-wrapper">
+                <h1>🔊 Ro-DeepVoice</h1>
+            </div>
+            <p class="subtitle">Sinteză Vocală Avansată</p>
+        </header>
+
+        <!-- Connection Status -->
+        <div id="connection-status" class="status disconnected">
+            <span class="status-indicator"></span>
+            <span class="status-text">Deconectat</span>
+        </div>
+
+        <!-- Server Settings -->
+        <div class="settings-section">
+            <label for="server-url">Server Gateway URL</label>
+            <div class="input-group">
+                <input type="text" id="server-url" value="http://127.0.0.1:5000" placeholder="http://127.0.0.1:5000">
+                <button id="connect-btn" class="btn btn-outline">Conectare</button>
+            </div>
+        </div>
+
+        <!-- Text Input -->
+        <div class="input-section">
+            <label for="text-input">Text pentru redare</label>
+            <textarea id="text-input" rows="3" placeholder="Introduceți textul aici sau selectați text într-o pagină..."></textarea>
+            <div class="char-count">
+                <span id="char-counter">0</span> caractere
+            </div>
+        </div>
+
+        <!-- Studio Parameters -->
+        <div class="studio-section">
+            <div class="param-group">
+                <label for="model-select">Motor de Sinteză</label>
+                <select id="model-select">
+                    <option value="vits1_biblie">VITS 1 — Biblie ⭐</option>
+                    <option value="vits1_mass">VITS 1 — RSS</option>
+                    <option value="vits2_rss">VITS 2 — RSS ⭐</option>
+                    <option value="vits2_biblie">VITS 2 — Biblie</option>
+                    <option value="styletts2">StyleTTS 2 (Experimental)</option>
+                </select>
+            </div>
+
+            <!-- Notă StyleTTS2 (apare doar când e selectat) -->
+            <div id="styletts2-note" class="model-note hidden">
+                ⚠️ StyleTTS 2 este <strong>experimental</strong>: calitatea nu este încă la
+                nivelul modelelor VITS și poate produce artefacte. Modelul va fi perfecționat
+                în versiunile viitoare.
+            </div>
+            
+            <div class="param-group">
+                <label for="speed-slider"><span>Viteză Redare</span><span class="param-value"><span id="speed-val">1.0</span>x</span></label>
+                <div class="slider-container">
+                    <span class="slider-min">0.5x</span>
+                    <input type="range" id="speed-slider" min="0.5" max="2.0" step="0.1" value="1.0">
+                    <span class="slider-max">2.0x</span>
+                </div>
+            </div>
+
+            <!-- VITS Speakers -->
+            <div class="param-group hidden" id="speaker-group">
+                <label for="speaker-select">Vorbitor (VITS)</label>
+                <select id="speaker-select">
+                    <option value="0">Masculin (Biblie)</option>
+                    <option value="1">Feminin (RSS)</option>
+                </select>
+            </div>
+            
+            <!-- StyleTTS2 Voice Cloning -->
+            <div class="param-group hidden" id="voice-cloning-group">
+                <label for="voice-clone-select">Copiere Voce (0-Shot)</label>
+                <div class="voice-select-row">
+                    <select id="voice-clone-select">
+                        <option value="">Fără clonare (Voce implicită)</option>
+                        <!-- Saved voices will be populated here -->
+                    </select>
+                    <button id="delete-voice-btn" class="btn btn-danger btn-icon" title="Șterge vocea selectată" disabled>
+                        <span class="icon">🗑️</span>
+                    </button>
+                </div>
+                <div class="record-actions">
+                    <button id="record-voice-btn" class="btn btn-outline glow-effect">
+                        <span class="icon">🎙️</span> Înregistrează
+                    </button>
+                    <span id="record-status" class="record-status"></span>
+                    <span id="record-timer" class="record-timer hidden">00:00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Studio Actions -->
+        <div class="playback-section">
+            <button id="play-btn" class="btn btn-primary btn-large glow-effect" title="Generează și ascultă">
+                <span class="icon">🎧</span> Ascultă
+            </button>
+            <button id="download-btn" class="btn btn-secondary" title="Descarcă întregul audio .WAV">
+                <span class="icon">💾</span> Descarcă
+            </button>
+            <button id="stop-btn" class="btn btn-danger" disabled title="Oprește redarea">
+                <span class="icon">⏹️</span>
+            </button>
+        </div>
+
+        <!-- Progress (Now mostly hidden/integrated, kept for JS compatibility) -->
+        <div id="progress-section" class="progress-section hidden">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <p id="progress-text" class="progress-text">Se procesează...</p>
+        </div>
+
+        <!-- Audio Player (Hidden, used by JS for playback) -->
+        <div id="audio-section" class="audio-section hidden">
+            <audio id="audio-player"></audio>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>Ro-DeepVoice © Academia Tehnică Militară „Ferdinand I”</p>
+        </footer>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

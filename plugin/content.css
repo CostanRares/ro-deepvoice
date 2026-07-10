@@ -1,0 +1,132 @@
+/* Content script styles - injected into web pages */
+
+/* Selection highlight for TTS */
+.ro-deepvoice-highlight {
+    background-color: rgba(79, 195, 247, 0.3) !important;
+    border-radius: 2px;
+}
+
+/* Floating button for quick TTS */
+#ro-deepvoice-fab {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 999999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+#ro-deepvoice-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
+#ro-deepvoice-fab.visible {
+    display: flex;
+}
+
+#ro-deepvoice-fab svg {
+    width: 20px;
+    height: 20px;
+    fill: white;
+}
+
+/* Mini player */
+#ro-deepvoice-mini-player {
+    position: fixed;
+    bottom: 20px;
+    right: 90px;
+    background: #1a1a2e;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    z-index: 999999;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 250px;
+    border: 1px solid rgba(79, 195, 247, 0.3);
+}
+
+#ro-deepvoice-mini-player.visible {
+    display: flex;
+}
+
+#ro-deepvoice-mini-player .player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #4fc3f7;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#ro-deepvoice-mini-player .player-close {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+#ro-deepvoice-mini-player .player-close:hover {
+    color: #fff;
+}
+
+#ro-deepvoice-mini-player .player-status {
+    color: #888;
+    font-size: 12px;
+}
+
+#ro-deepvoice-mini-player audio {
+    width: 100%;
+    height: 36px;
+}
+
+#ro-deepvoice-mini-player .player-speed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#ro-deepvoice-mini-player .player-speed-label {
+    color: #888;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+#ro-deepvoice-mini-player .player-speed-slider {
+    flex: 1;
+    accent-color: #4fc3f7;
+    cursor: pointer;
+    margin: 0;
+}
+
+#ro-deepvoice-mini-player .player-speed-val {
+    color: #4fc3f7;
+    font-size: 12px;
+    font-weight: bold;
+    min-width: 34px;
+    text-align: right;
+}
+
+#ro-deepvoice-mini-player .player-progress {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+#ro-deepvoice-mini-player .player-progress-fill {
+    height: 100%;
+    background: #4fc3f7;
+    width: 0%;
+    transition: width 0.3s ease;
+}

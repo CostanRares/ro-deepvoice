@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ro-DeepVoice — Asistent vocal</title>
+<style>
+  :root { --bg:#0f1220; --panel:#1a1f35; --accent:#4f8cff; --user:#2a3354; --bot:#222a44; --txt:#e8ecf7; --muted:#8b93b0; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--txt); height:100vh; display:flex; flex-direction:column; }
+  header { padding:12px 20px; background:var(--panel); border-bottom:1px solid #2a3150; }
+  .row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  header h1 { font-size:17px; margin:0 16px 0 0; font-weight:600; }
+  header .sub { color:var(--muted); font-size:12px; }
+  select, button { background:var(--panel); color:var(--txt); border:1px solid #394063; border-radius:8px; padding:8px 12px; font-size:14px; }
+  button { cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  button.sm { padding:6px 10px; font-size:13px; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  #refArea { margin-top:10px; padding:10px 12px; background:#141831; border:1px solid #2a3150; border-radius:10px; display:none; }
+  #addPanel { margin-top:10px; display:none; gap:10px; align-items:center; flex-wrap:wrap; }
+  #recDot { color:#e8453c; font-weight:600; display:none; }
+  #chat { flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:14px; }
+  .msg { max-width:760px; padding:12px 16px; border-radius:12px; line-height:1.5; white-space:pre-wrap; }
+  .msg.user { align-self:flex-end; background:var(--user); }
+  .msg.bot { align-self:flex-start; background:var(--bot); }
+  .msg .meta { font-size:11px; color:var(--muted); margin-top:8px; }
+  .dot { width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
+  footer { padding:16px 20px; background:var(--panel); border-top:1px solid #2a3150; display:flex; gap:10px; align-items:flex-end; }
+  #mic.rec { background:#e8453c; border-color:#e8453c; color:#fff; }
+  textarea { flex:1; background:var(--bg); color:var(--txt); border:1px solid #394063; border-radius:10px; padding:12px; font-size:15px; resize:none; font-family:inherit; height:48px; max-height:160px; }
+  .hint { color:var(--muted); font-size:12px; padding:6px 20px 0; }
+  .model-hint { color:var(--muted); font-size:12px; margin-top:8px; }
+  .model-hint strong { color:var(--txt); font-weight:600; }
+  .st2-note { margin-top:10px; padding:8px 12px; font-size:12.5px; line-height:1.4; color:var(--txt); background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.4); border-radius:10px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <h1>🎙️ Ro-DeepVoice</h1>
+    <span class="sub">LLM românesc (RoLlama3) → sinteză vocală / clonare</span>
+    <span style="margin-left:auto"></span>
+    <label class="sub">Voce:</label>
+    <select id="ttsModel">
+      <option value="vits2_rss">VITS2 — voce feminină (RSS)</option>
+      <option value="vits1_rss">VITS1 — voce feminină (RSS)</option>
+      <option value="vits2_biblie">VITS2 — voce masculină (biblie)</option>
+      <option value="vits1_biblie">VITS1 — voce masculină (biblie)</option>
+      <option value="styletts2">StyleTTS2 — voce implicită</option>
+      <option value="styletts2_clone">StyleTTS2 — clonare vocală</option>
+    </select>
+  </div>
+
+  <div class="model-hint">💡 Cele mai naturale voci: <strong>VITS1 — Biblie</strong> (masculină) · <strong>VITS2 — RSS</strong> (feminină)</div>
+
+  <!-- Avertisment StyleTTS2 (apare doar când e selectat) -->
+  <div id="st2Note" class="st2-note" style="display:none">⚠️ StyleTTS2 este <strong>experimental</strong>: calitatea nu este încă la nivelul modelelor VITS și poate produce artefacte. Modelul va fi perfecționat în versiunile viitoare.</div>
+
+  <!-- Apare DOAR când e selectată clonarea vocală -->
+  <div id="refArea">
+    <div class="row">
+      <label class="sub">Referință (vocea de clonat):</label>
+      <select id="refSelect" style="min-width:240px"></select>
+      <button id="refDelete" class="sm" title="Șterge referința selectată">🗑️</button>
+    </div>
+    <div id="addPanel" class="row">
+      <span class="sub">Adaugă o referință:</span>
+      <button id="btnRecord" class="sm">🎤 Înregistrează</button>
+      <button id="btnUpload" class="sm">📁 Încarcă fișier</button>
+      <span id="recDot">● înregistrez... (apasă din nou pentru stop)</span>
+      <input type="file" id="fileInput" accept="audio/*" style="display:none">
+    </div>
+  </div>
+</header>
+
+<div class="hint" id="status">Conectare...</div>
+
+<div id="chat"></div>
+
+<footer>
+  <button id="mic" title="Vorbește (dictare cu Whisper)">🎤</button>
+  <textarea id="input" placeholder="Scrie un mesaj... (Enter pentru trimitere)"></textarea>
+  <button id="send" class="primary">Trimite</button>
+</footer>
+
+<script>
+const GW = location.protocol === "file:" ? "http://localhost:5000" : location.origin;
+const $ = id => document.getElementById(id);
+const chat=$("chat"), input=$("input"), sendBtn=$("send"), micBtn=$("mic"), statusEl=$("status");
+const ttsModel=$("ttsModel"), refArea=$("refArea"), refSelect=$("refSelect"), addPanel=$("addPanel");
+let history=[];
+let currentRefId=null;
+
+function setStatus(s){ statusEl.textContent=s; }
+function addMsg(text, who){
+  const d=document.createElement("div"); d.className="msg "+who;
+  const b=document.createElement("div"); b.className="body"; b.textContent=text;
+  d.appendChild(b); chat.appendChild(d); chat.scrollTop=chat.scrollHeight; return d;
+}
+
+// ---------- conexiune ----------
+(async()=>{ try{ const j=await (await fetch(GW+"/health")).json();
+  setStatus("Gateway: "+(j.status||"?")+" · cluster: "+(j.cluster_status||"?")); }
+  catch(e){ setStatus("Gateway indisponibil — pornește server/main.py"); } })();
+
+// ---------- referințe de clonare ----------
+function needsRef(){ return ttsModel.value==="styletts2_clone"; }
+
+function isStyleTTS2(){ return ttsModel.value==="styletts2" || ttsModel.value==="styletts2_clone"; }
+ttsModel.addEventListener("change", ()=>{
+  refArea.style.display = needsRef() ? "block" : "none";
+  if(needsRef()) loadReferences();
+  $("st2Note").style.display = isStyleTTS2() ? "block" : "none";
+});
+
+async function loadReferences(){
+  let items=[];
+  try{ items=await (await fetch(GW+"/references")).json(); }catch(e){}
+  refSelect.innerHTML="";
+  const add=document.createElement("option"); add.value="__add__"; add.textContent="➕ Adaugă referință..."; refSelect.appendChild(add);
+  for(const it of items){
+    const o=document.createElement("option"); o.value=it.id; o.textContent="🎤 "+it.name; refSelect.appendChild(o);
+  }
+  // selectează prima referință reală dacă există, altfel rămâne pe "adaugă"
+  if(items.length){ refSelect.value=items[items.length-1].id; currentRefId=refSelect.value; addPanel.style.display="none"; }
+  else { refSelect.value="__add__"; currentRefId=null; addPanel.style.display="flex"; }
+}
+
+refSelect.addEventListener("change", ()=>{
+  if(refSelect.value==="__add__"){ addPanel.style.display="flex"; currentRefId=null; }
+  else { addPanel.style.display="none"; currentRefId=refSelect.value; }
+});
+
+$("refDelete").addEventListener("click", async ()=>{
+  if(!currentRefId) return;
+  if(!confirm("Ștergi referința selectată?")) return;
+  try{ await fetch(GW+"/references/"+currentRefId,{method:"DELETE"}); }catch(e){}
+  await loadReferences();
+});
+
+// conversie orice audio -> WAV PCM 16-bit mono (compatibil cu modelul)
+async function audioToWavB64(blob){
+  const ab = await blob.arrayBuffer();
+  const ctx = new (window.AudioContext||window.webkitAudioContext)();
+  const audioBuf = await ctx.decodeAudioData(ab);
+  const samples = audioBuf.getChannelData(0);
+  const sr = audioBuf.sampleRate;
+  const buf = new ArrayBuffer(44+samples.length*2);
+  const v = new DataView(buf);
+  const ws=(o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+  ws(0,"RIFF"); v.setUint32(4,36+samples.length*2,true); ws(8,"WAVE");
+  ws(12,"fmt "); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+  ws(36,"data"); v.setUint32(40,samples.length*2,true);
+  let o=44; for(let i=0;i<samples.length;i++){ let s=Math.max(-1,Math.min(1,samples[i])); v.setInt16(o,s<0?s*0x8000:s*0x7FFF,true); o+=2; }
+  // base64 pe bucăți
+  const bytes=new Uint8Array(buf); let bin=""; const ck=0x8000;
+  for(let i=0;i<bytes.length;i+=ck) bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+ck));
+  ctx.close();
+  return { b64: btoa(bin), dur: samples.length/sr };
+}
+
+async function saveReference(blob){
+  setStatus("Procesez audio...");
+  let res;
+  try{ res = await audioToWavB64(blob); }
+  catch(e){ setStatus("Nu pot citi audio-ul: "+e.message); return; }
+  if(res.dur < 1.0){ setStatus("Referința e prea scurtă (minim ~1-2 secunde). Mai încearcă."); return; }
+  const name = prompt("Denumește această voce de referință:", "Vocea mea");
+  if(name===null){ setStatus("Anulat."); return; }
+  setStatus("Salvez referința...");
+  try{
+    const r = await fetch(GW+"/references",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:name.trim()||"fără nume", audio_base64:res.b64})});
+    if(!r.ok){ setStatus("Eroare la salvare: "+await r.text()); return; }
+    const j = await r.json();
+    await loadReferences();
+    refSelect.value = j.id; currentRefId = j.id; addPanel.style.display="none";
+    setStatus("Referință salvată: "+j.name);
+  }catch(e){ setStatus("Eroare rețea: "+e.message); }
+}
+
+// înregistrare referință în timp real
+let refRec=null, refChunks=[];
+$("btnRecord").addEventListener("click", async ()=>{
+  if(refRec && refRec.state==="recording"){ refRec.stop(); return; }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    refRec=new MediaRecorder(stream); refChunks=[];
+    refRec.ondataavailable=e=>refChunks.push(e.data);
+    refRec.onstop=async()=>{ $("recDot").style.display="none"; $("btnRecord").textContent="🎤 Înregistrează";
+      stream.getTracks().forEach(t=>t.stop());
+      await saveReference(new Blob(refChunks,{type:"audio/webm"})); };
+    refRec.start(); $("recDot").style.display="inline"; $("btnRecord").textContent="⏹ Stop";
+    setStatus("Înregistrez referința... vorbește 2-5 secunde.");
+  }catch(e){ setStatus("Microfon indisponibil: "+e.message); }
+});
+
+// încărcare fișier referință
+$("btnUpload").addEventListener("click", ()=> $("fileInput").click());
+$("fileInput").addEventListener("change", async ()=>{
+  const f=$("fileInput").files[0]; if(!f) return;
+  await saveReference(f); $("fileInput").value="";
+});
+
+// ---------- redare audio ----------
+async function playSegments(segments){
+  for(const seg of segments){
+    if(!seg.audio_base64) continue;
+    await new Promise(res=>{ const a=new Audio("data:audio/wav;base64,"+seg.audio_base64);
+      a.onended=res; a.onerror=res; a.play().catch(res); });
+  }
+}
+
+// ---------- chat ----------
+async function sendMessage(text){
+  if(!text.trim()) return;
+  let model=ttsModel.value;
+  let payload={ text, tts_model:model, history };
+  if(model==="styletts2_clone"){
+    if(!currentRefId){ setStatus("Selectează sau adaugă o referință vocală pentru clonare."); refArea.style.display="block"; return; }
+    payload.tts_model = "styletts2";
+    payload.reference_id=currentRefId;
+  }
+  addMsg(text,"user"); input.value=""; sendBtn.disabled=true;
+  const botMsg=addMsg("","bot"); const body=botMsg.querySelector(".body");
+  body.innerHTML='<span class="dot"></span> gândește...';
+  try{
+    const r=await fetch(GW+"/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    if(!r.ok){ body.textContent="Eroare: "+await r.text(); sendBtn.disabled=false; return; }
+    const j=await r.json();
+    body.textContent=j.reply;
+    history.push({role:"user",content:text}); history.push({role:"assistant",content:j.reply});
+    if(history.length>8) history=history.slice(-8);
+    const meta=document.createElement("div"); meta.className="meta"; meta.textContent="🔊 "+(j.segments?.length||0)+" segmente audio";
+    botMsg.appendChild(meta);
+    setStatus("Redare audio..."); await playSegments(j.segments||[]); setStatus("Gata.");
+  }catch(e){ body.textContent="Eroare rețea: "+e.message; }
+  sendBtn.disabled=false;
+}
+sendBtn.onclick=()=>sendMessage(input.value);
+input.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendMessage(input.value); }});
+
+// ---------- dictare (Whisper STT) ----------
+let micRec=null, micChunks=[];
+micBtn.onclick=async()=>{
+  if(micRec && micRec.state==="recording"){ micRec.stop(); return; }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    micRec=new MediaRecorder(stream); micChunks=[];
+    micRec.ondataavailable=e=>micChunks.push(e.data);
+    micRec.onstop=async()=>{ micBtn.classList.remove("rec"); setStatus("Transcriere (Whisper)...");
+      const blob=new Blob(micChunks,{type:"audio/webm"}); const buf=await blob.arrayBuffer();
+      const b64=btoa(String.fromCharCode(...new Uint8Array(buf)));
+      stream.getTracks().forEach(t=>t.stop());
+      try{ const j=await (await fetch(GW+"/stt",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({audio_base64:b64})})).json();
+        if(j.text){ input.value=j.text; sendMessage(j.text); } else setStatus("Nu am înțeles audio-ul."); }
+      catch(e){ setStatus("STT indisponibil: "+e.message); } };
+    micRec.start(); micBtn.classList.add("rec"); setStatus("Înregistrez... (apasă din nou pentru stop)");
+  }catch(e){ setStatus("Microfon indisponibil: "+e.message); }
+};
+</script>
+</body>
+</html>

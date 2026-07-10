@@ -1,0 +1,73 @@
+{
+  "manifest_version": 3,
+  "name": "Ro-DeepVoice TTS",
+  "description": "Romanian Text-to-Speech - Citește text din pagini web cu voce sintetizată",
+  "version": "1.0.0",
+  "author": "Costan Rares",
+  
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "storage",
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "http://localhost:*/*",
+    "http://127.0.0.1:*/*",
+    "<all_urls>"
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  
+  "commands": {
+    "read-selection": {
+      "suggested_key": {
+        "default": "Alt+R",
+        "windows": "Alt+R",
+        "mac": "Alt+R",
+        "linux": "Alt+R"
+      },
+      "description": "Citește textul selectat cu voce"
+    },
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+V",
+        "windows": "Alt+Shift+V"
+      },
+      "description": "Deschide popup-ul Ro-DeepVoice"
+    }
+  }
+}
